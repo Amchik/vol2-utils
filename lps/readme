@@ -1,0 +1,23 @@
+░█░░░█▀▀░█▀█ I did't know what
+░█░░░▀▀█░█▀▀ it means
+░▀▀▀░▀▀▀░▀░░
+
+Fast-guide:
+  ./lsp.c
+
+Slow-guide:
+  # chmod +x lsp.c
+  $ bash ./lsp.c
+
+Normal guide:
+  ./lsp.c --compile-time%getpath
+    Returns executable path
+
+  ./lsp.c --compile-time%cleanup
+    Clean all executables
+
+Note:
+  tcc < gcc < clang < bash
+  (for er2)
+
+WIP by the way

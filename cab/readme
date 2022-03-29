@@ -1,0 +1,20 @@
+cab (cabfile) --
+ c - hm...
+ a - hm...
+ b - may be build?
+
+cab (cabfile) -- like makefile, but on C (for idiots AKA suckless-way)
+
+Docs:
+  $ head -n15 cabfile.c
+
+How-to:
+  1. $ mkdir {bin,out,src}
+  2. See cabfile.c for config (suckless-way)
+
+To-Do:
+  [ ] Do not recompile if (.o edit time) >= (src edit time)
+  [ ] $ mkdir {bin,out,src}
+  [ ] idk
+
+WIP

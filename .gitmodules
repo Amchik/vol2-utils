@@ -1,0 +1,3 @@
+[submodule "tableflip"]
+	path = tableflip
+	url = https://github.com/Amchik/tableflip.git
