@@ -91,6 +91,7 @@ char *APPNAME;
 char *CC;
 char *STD;
 const TARGET *STARGET;
+char FORCE_REBUILD;
 
 struct ftoc *FTOCS;
 
@@ -258,6 +259,7 @@ main(int argc, char **argv) {
   if (!CC) CC = "cc";
   STD = "c89";
   STARGET = &TARGETS[0];
+  FORCE_REBUILD = 0;
   if (argc < 2) {
     goto usage;
   }
@@ -294,6 +296,8 @@ main(int argc, char **argv) {
         puts("0.1.0");
         puts("cabfile");
         exit(0);
+      } else if (ARGM("f") || ARGM("-force")) {
+        FORCE_REBUILD = 1;
       } else {
         goto usage;
       }
@@ -360,8 +364,9 @@ cmdbuild(char **argv __attribute__((unused))) {
   struct ftoc *cur;
   char *cmd, *files;
   size_t files_len;
-  int status;
+  int status, skipped;
 
+  skipped = 0;
   files_len = 1;
   files = malloc(files_len);
   files[0] = '\0';
@@ -372,18 +377,22 @@ cmdbuild(char **argv __attribute__((unused))) {
 
     sprintf(file, "%s/" OUTPUT_FMT, OUTPUT_DIR, cur->nodir, STARGET->name);
     
-    if (-1 == stat(cur->full, &src_stat)) {
+    if (!FORCE_REBUILD && -1 == stat(cur->full, &src_stat)) {
       fprintf(stderr, "\033[1;31mCompilation failed!\033[0m\n - File:    %s\n - Reason:  failed to stat file.\n"
           " - Errno:   (#%d) %s\n",
           file, errno, strerror(errno));
       return;
     }
-    if (-1 != stat(file, &file_stat)
+    if (!FORCE_REBUILD
+        && -1 != stat(file, &file_stat)
         && file_stat.st_mtim.tv_sec > src_stat.st_mtim.tv_sec) {
       /* skip... */
+      skipped += 1;
     }
     else {
-      docompilefile(cur->full, cur->nodir);
+      if (1 != docompilefile(cur->full, cur->nodir)) {
+        exit(1);
+      }
     }
 
     files_len += sizeof(OUTPUT_DIR) + strlen(cur->nodir) + 102;
@@ -392,8 +401,12 @@ cmdbuild(char **argv __attribute__((unused))) {
   }
 
   cmd = malloc(strlen(CC) + sizeof(_OUTFLAG) + sizeof(BINARY_DIR) + sizeof(BINARY_FMT) + files_len + strlen(FLDFLAGS) + 5);
-  sprintf(cmd, "%s %s %s/%s %s %s", CC, _OUTFLAG, BINARY_DIR, BINARY_FMT, files, FLDFLAGS);
+  sprintf(cmd, "%s %s %s/%s%s %s", CC, _OUTFLAG, BINARY_DIR, BINARY_FMT, files, FLDFLAGS);
   free(files);
+
+  if (skipped) {
+    printf("\033[0;35mSKIPPED\033[0;1m %d\033[0m files skipped. Run cabfile with \033[1m--force\033[0m argument for recompile it.\n", skipped);
+  }
 
   status = docommand(cmd);
 
