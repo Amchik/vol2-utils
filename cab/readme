@@ -13,7 +13,7 @@ How-to:
   2. See cabfile.c for config (suckless-way)
 
 To-Do:
-  [ ] Do not recompile if (.o edit time) >= (src edit time)
+  [x] Do not recompile if (.o edit time) >= (src edit time)
   [ ] $ mkdir {bin,out,src}
   [ ] idk
 

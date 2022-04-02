@@ -5,6 +5,7 @@
  * Build: % clang -O3 -pthread -o cabfile cabfile.c
  *
  * Usage: ./cabfile help
+ * Usage: tcc -run cabfile.c help
  *
  * Script author: Amchik
  */
@@ -18,6 +19,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
 #include <errno.h>
 #include <dirent.h>
 
@@ -160,8 +162,7 @@ initfiles(const char *_dir, unsigned char _force, int itern) {
       }
     } else {
       size_t flen;
-      register int i;
-      char *fullname;
+      register size_t i;
       struct ftoc *node;
 
       flen = strlen(ent->d_name);
@@ -365,8 +366,26 @@ cmdbuild(char **argv __attribute__((unused))) {
   files = malloc(files_len);
   files[0] = '\0';
   for (cur = FTOCS; cur != 0; cur = cur->next) {
-    docompilefile(cur->full, cur->nodir);
+    size_t file_len = sizeof(OUTPUT_DIR) + strlen(cur->nodir) + 102;
+    char file[file_len];
+    struct stat src_stat, file_stat;
+
+    sprintf(file, "%s/" OUTPUT_FMT, OUTPUT_DIR, cur->nodir, STARGET->name);
     
+    if (-1 == stat(cur->full, &src_stat)) {
+      fprintf(stderr, "\033[1;31mCompilation failed!\033[0m\n - File:    %s\n - Reason:  failed to stat file.\n"
+          " - Errno:   (#%d) %s\n",
+          file, errno, strerror(errno));
+      return;
+    }
+    if (-1 != stat(file, &file_stat)
+        && file_stat.st_mtim.tv_sec > src_stat.st_mtim.tv_sec) {
+      /* skip... */
+    }
+    else {
+      docompilefile(cur->full, cur->nodir);
+    }
+
     files_len += sizeof(OUTPUT_DIR) + strlen(cur->nodir) + 102;
     files = realloc(files, files_len);
     sprintf(files, "%s %s/" OUTPUT_FMT, files, OUTPUT_DIR, cur->nodir, STARGET->name);/* looks like sigsegv */
