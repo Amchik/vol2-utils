@@ -98,6 +98,9 @@ struct ftoc *FTOCS;
 char *FCFLAGS;
 char *FLDFLAGS;
 
+#define argument(long, short) \
+  if ((long && ARGM(long)) || (short && ARGM(short)))
+
 #define matcharg(arg, exp) __matcharg(arg, exp, sizeof(exp))
 #define ARGM(exp) ((cpos = matcharg(argv[i] + 1, exp)) != -1)
 int
@@ -266,7 +269,7 @@ main(int argc, char **argv) {
   command = 0;
   for (i = 1; i < argc; i++) {
     if (argv[i][0] == '-') {
-      if (ARGM("t") || ARGM("-target")) {
+      argument ("-target", "t") {
         if (cpos == 0) {
           fprintf(stderr, "Usage: %s --target=<target> ...\n", APPNAME);
           exit(1);
@@ -280,23 +283,23 @@ main(int argc, char **argv) {
           fprintf(stderr, "Target '%s' does not exists\n", argv[i] + 1 + cpos);
           exit(1);
         }
-      } else if (ARGM("-cc") || ARGM("c")) {
+      } else argument ("-cc", "c") {
         if (cpos == 0) {
           fprintf(stderr, "Usage: %s --cc=<c compiler> ...\n", APPNAME);
           exit(1);
         }
         CC = argv[i] + 1 + cpos;
-      } else if (ARGM("-std")) {
+      } else argument ("-std", 0) {
         if (cpos == 0) {
           fprintf(stderr, "Usage: %s --std=<standart> ...\n", APPNAME);
           exit(1);
         }
         STD = argv[i] + 1 + cpos;
-      } else if (ARGM("V")) {
-        puts("0.1.0");
+      } else argument ("-version", "V") {
+        puts("1.0.0");
         puts("cabfile");
         exit(0);
-      } else if (ARGM("f") || ARGM("-force")) {
+      } else argument ("-force", "f") {
         FORCE_REBUILD = 1;
       } else {
         goto usage;
@@ -317,7 +320,7 @@ main(int argc, char **argv) {
   }
 
 usage:
-  fprintf(stderr, "Usage: %s <command> ...\n       %s help\n", APPNAME, APPNAME);
+  cmdhelp(0);
   exit(1);
 }
 
@@ -325,36 +328,42 @@ void
 cmdhelp(char **argv __attribute__((unused))) {
   register int i;
 
-  printf("cabfile version 0.1\n\nList of commands:\n");
+  printf("cabfile version 1.0\n\n\033[0;33mSUBCOMMANDS\033[0m:\n");
   for (i = 0; COMMANDS[i].name != 0; i++) {
     printf(" * \033[1m%s\033[0m %s\n", COMMANDS[i].name, COMMANDS[i].docs);
   }
-  printf("\nList of targets:\n");
+  printf("\n\033[0;33mTARGETS\033[0m: ");
   for (i = 0; TARGETS[i].name != 0; i++) {
-    printf(" * \033[1;32m%s\033[0m\n", TARGETS[i].name);
+    printf("\033[1;32m%s\033[0m", TARGETS[i].name);
+    if (TARGETS[i + 1].name != 0) {
+      printf(", ");
+    }
   }
-  printf("\nCommand line options:\n"
-      " * \033[1m--target=<target>\033[0m  Sets target\n"
-      " * \033[1m--cc=<c compiler>\033[0m  Sets $CC\n"
-      " * \033[1m--std=<standart>\033[0m   Sets C standart\n"
-      "\n"
-      "Example:\n"
-      " %% %s build\n"
-      , APPNAME);
+  puts("\n\n\033[0;33mARGUMENTS\033[0m:\n"
+      " * \033[1m--target=<target>\033[0m (\033[1m-t\033[0m) Sets target\n"
+      " * \033[1m--cc=<c compiler>\033[0m (\033[1m-c\033[0m) Sets $CC\n"
+      " * \033[1m--std=<standart> \033[0m      Sets C standart\n"
+      " * \033[1m--force          \033[0m (\033[1m-f\033[0m) Recompile all files\n"
+      " * \033[1m--version        \033[0m (\033[1m-V\033[0m) Get version\n"
+      );
+  printf(
+      "\033[0;33mEXAMPLES\033[0m:\n"
+      " %% %s \033[32mbuild\033[0m -f\n"
+      " %% %s -t release \033[32minfo\033[0m --std=gnu99\n"
+      , APPNAME, APPNAME);
 }
 void
 cmdinfo(char **argv __attribute__((unused))) {
   printf(
       "\033[35m%s\033[0m:\n"
-      " - bin: " BINARY_DIR "\n"
-      " - obj: " OUTPUT_DIR " (fmt: " OUTPUT_FMT ")\n"
+      " - bin: " BINARY_DIR "/\n"
+      " - obj: " OUTPUT_DIR "/ (fmt: " OUTPUT_FMT ")\n"
       "Selected target \033[32m%s\033[0m:\n"
-      " CFLAGS:  %s\n"
-      " LDFLAGS: %s\n"
+      " * \033[1mCFLAGS\033[0m:  \033[0;1;40;37m%s\033[0m\n"
+      " * \033[1mLDFLAGS\033[0m: \033[0;1;40;37m%s\033[0m\n"
       "Selected standart \033[32m%s\033[0m via \033[32m%s\033[0m\n"
-      "\n"
-      "Final CFLAGS:  %s\n"
-      "Final LDFLAGS: %s\n"
+      "\033[33mFinal CFLAGS\033[0m:  \033[0;1;40;37m%s\033[0m\n"
+      "\033[33mFinal LDFLAGS\033[0m: \033[0;1;40;37m%s\033[0m\n"
       ,
       BINARY_FMT, "<filename>", "<target>", STARGET->name, STARGET->cflags,
       STARGET->ldflags, STD, CC, FCFLAGS, FLDFLAGS);
