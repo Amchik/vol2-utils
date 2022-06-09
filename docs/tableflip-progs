@@ -3,3 +3,4 @@
 "tableflip" "C"        "Fun/Text formatting"
 "lps"       "C"        "System monitoring"
 "cab"       "C"        "Build System"
+"utests2"   "C"        "Unit-Testing"
